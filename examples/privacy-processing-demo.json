@@ -1,0 +1,341 @@
+{
+  "app": "privacyflow",
+  "schema": 1,
+  "meta": {
+    "docTitle": "개인정보 처리 흐름도 — 합성 예제",
+    "version": "1.0",
+    "date": "2026-10-02",
+    "author": "",
+    "reviewer": ""
+  },
+  "revisions": [],
+  "tabs": [
+    {
+      "id": "1c6be689-7265-4236-bc6e-2de33f845c72",
+      "name": "흐름도 1",
+      "nodes": [
+        {
+          "kind": "subject",
+          "stage": "collect",
+          "name": "정보주체",
+          "owner": "가상 운영팀",
+          "systemName": "",
+          "purpose": "가상 회원관리",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 80,
+          "y": 220,
+          "id": "7c2de7b8-7cec-4011-becd-876ae7f0853b"
+        },
+        {
+          "kind": "activity",
+          "stage": "collect",
+          "name": "회원정보 수집",
+          "owner": "가상 운영팀",
+          "systemName": "가상 회원관리 시스템",
+          "purpose": "가상 회원관리",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 80,
+          "y": 400,
+          "id": "9234e729-c5fd-4051-9638-4a91b61d7908"
+        },
+        {
+          "kind": "system",
+          "stage": "use",
+          "name": "회원관리",
+          "owner": "가상 운영팀",
+          "systemName": "가상 회원관리 시스템",
+          "purpose": "가상 회원관리",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 380,
+          "y": 220,
+          "id": "249daa0a-87e4-47cd-b935-179d16cf0a2c"
+        },
+        {
+          "kind": "store",
+          "stage": "store",
+          "name": "회원DB",
+          "owner": "가상 운영팀",
+          "systemName": "가상 회원관리 시스템",
+          "purpose": "가상 회원관리",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "예시 — 조직별 검토 필요",
+          "storageLocation": "가상 보관 위치 — 조직별 검토 필요",
+          "recipient": "",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 680,
+          "y": 220,
+          "id": "f52888ad-14bf-4217-bb74-9d48d6a4a735"
+        },
+        {
+          "kind": "activity",
+          "stage": "destroy",
+          "name": "보유기간 종료 파기",
+          "owner": "가상 운영팀",
+          "systemName": "가상 회원관리 시스템",
+          "purpose": "보유기간 종료 항목 파기",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "예시 — 조직별 검토 필요",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 1580,
+          "y": 220,
+          "id": "287d04b1-b2e5-4bd8-b7af-fe46583a7cc1"
+        },
+        {
+          "kind": "recipient",
+          "stage": "provide",
+          "name": "배송사",
+          "owner": "가상 운영팀",
+          "systemName": "",
+          "purpose": "가상 주문 배송",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "가상 배송사",
+          "destinationCountry": "",
+          "entrustedTask": "",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 980,
+          "y": 220,
+          "id": "e3fc6b28-6a4c-4b0e-9d97-eb7ac51ae9a7"
+        },
+        {
+          "kind": "recipient",
+          "stage": "delegate",
+          "name": "고객상담 수탁업체",
+          "owner": "가상 운영팀",
+          "systemName": "",
+          "purpose": "가상 회원 고객상담",
+          "dataSubjects": [
+            "회원"
+          ],
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "sensitive": "unknown",
+          "uniqueIdentifier": "unknown",
+          "legalBasis": "예시 — 조직별 검토 필요",
+          "retention": "",
+          "storageLocation": "",
+          "recipient": "가상 고객상담사",
+          "destinationCountry": "",
+          "entrustedTask": "가상 회원 문의 상담",
+          "destructionMethod": "",
+          "safeguards": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "x": 1280,
+          "y": 220,
+          "id": "3878c581-4f86-4c2a-ba9e-055f9467fa61"
+        }
+      ],
+      "flows": [
+        {
+          "from": "7c2de7b8-7cec-4011-becd-876ae7f0853b",
+          "to": "9234e729-c5fd-4051-9638-4a91b61d7908",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "회원정보 수집",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "9c7cd6d6-2abf-416c-a73a-6cc8bd9e5c04"
+        },
+        {
+          "from": "9234e729-c5fd-4051-9638-4a91b61d7908",
+          "to": "249daa0a-87e4-47cd-b935-179d16cf0a2c",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "회원정보 등록",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "9674f7d7-2cbc-4e38-81be-7c791a1a31ad"
+        },
+        {
+          "from": "249daa0a-87e4-47cd-b935-179d16cf0a2c",
+          "to": "f52888ad-14bf-4217-bb74-9d48d6a4a735",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "회원정보 보관",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "22ff74a4-8660-403d-ab3e-005aa41e5666"
+        },
+        {
+          "from": "f52888ad-14bf-4217-bb74-9d48d6a4a735",
+          "to": "287d04b1-b2e5-4bd8-b7af-fe46583a7cc1",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "파기 대상 전달",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "93f82ce5-0d6e-483f-a93b-0ab240055961"
+        },
+        {
+          "from": "249daa0a-87e4-47cd-b935-179d16cf0a2c",
+          "to": "e3fc6b28-6a4c-4b0e-9d97-eb7ac51ae9a7",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "배송정보 제공",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "ebd45f0f-f135-4e55-8e32-1fbf8b1f26c8"
+        },
+        {
+          "from": "249daa0a-87e4-47cd-b935-179d16cf0a2c",
+          "to": "3878c581-4f86-4c2a-ba9e-055f9467fa61",
+          "sourceHandle": null,
+          "targetHandle": null,
+          "name": "고객상담 위탁",
+          "dataItems": [
+            "이름",
+            "주소",
+            "회원번호"
+          ],
+          "method": "",
+          "frequency": "",
+          "protection": "unknown",
+          "protectionNote": "",
+          "notes": "합성 예시 — 실제 운영 설정이 아닙니다",
+          "id": "784bc523-2197-447e-9ea2-4b151b223d94"
+        }
+      ]
+    }
+  ],
+  "activeTabId": "1c6be689-7265-4236-bc6e-2de33f845c72"
+}
