@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 
+let drain: (() => Promise<void>) | undefined;
 beforeEach(() => {
   vi.resetModules();
   const data = new Map<string, string>();
@@ -8,18 +9,21 @@ beforeEach(() => {
     setItem: (key: string, value: string) => data.set(key, value),
     removeItem: (key: string) => data.delete(key),
   });
+  vi.stubGlobal('navigator', { locks: { request: (_name: string, _options: unknown, callback: () => unknown) => Promise.resolve().then(callback) } });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(async () => { if (drain) await drain(); drain = undefined; vi.unstubAllGlobals(); });
 async function setup() {
   // Static imports would hydrate before per-test storage and retain old subscriptions.
   const { useProjectStore: store, projectSnapshot } = await import('./useProjectStore');
+  const { waitForPendingSaves } = await import('../lib/projectStorage');
+  drain = waitForPendingSaves;
   store.getState().resetProject(true);
   const history = await import('./projectHistory');
   const { useUiStore: ui } = await import('./useUiStore');
-  return { store, ui, projectSnapshot, ...history };
+  return { store, ui, projectSnapshot, waitForPendingSaves, ...history };
 }
 it('undoes multi-action deletion and incident flows atomically, persisting complete restored project', async () => {
-  const { store, ui, projectSnapshot, undo, redo } = await setup();
+  const { store, ui, projectSnapshot, undo, redo, waitForPendingSaves } = await setup();
   const before = projectSnapshot();
   const tab = before.tabs[0];
   ui.getState().select(tab.nodes[0].id);
@@ -30,6 +34,7 @@ it('undoes multi-action deletion and incident flows atomically, persisting compl
   expect(undo()).toBe(true);
   expect(projectSnapshot()).toEqual(before);
   expect(ui.getState().editEpoch).toBe(epoch + 1);
+  await waitForPendingSaves();
   expect(JSON.parse(localStorage.getItem('privacyflow-project-v1')!).state).toEqual(before);
   expect(redo()).toBe(true);
   expect(store.getState().tabs[0].nodes.map((node) => node.id)).toEqual(tab.nodes.slice(2).map((node) => node.id));

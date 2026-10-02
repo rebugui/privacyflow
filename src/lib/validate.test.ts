@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import type { DiagramTab, FlowNode } from '../types';
 import { defaultFlow, defaultNode } from './defaults';
-import { validate } from './validate';
+import { validate, reviewWarnings } from './validate';
 
 const complete: FlowNode = { ...defaultNode('activity', 'use'), id: 'node', name: '활동', owner: '담당자', purpose: '목적', dataItems: ['이름'], legalBasis: '검토 근거' };
 it.each([
@@ -50,4 +50,18 @@ it('exempts external parties from activity fields, but still reviews names and s
     { ...defaultNode('recipient', 'delegate'), id: 'recipient', recipient: '가상 기관' },
   ], flows: [] };
   expect(validate(tab).map((warning) => warning.message)).toEqual(['검토 필요: 이름 미지정', '검토 필요: 위탁업무 미지정']);
+});
+
+it('counts an obstructed route alongside domain warnings, then clears it when moved', () => {
+  const a = { ...complete, id: 'a', x: 0, y: 0 };
+  const b = { ...complete, id: 'b', x: 680, y: 0 };
+  const obstacle = { ...complete, id: 'obstacle', x: 200, y: 0 };
+  const flow = { ...defaultFlow(a.id, b.id), id: 'flow', name: '전달', dataItems: ['이름'], protection: 'tls' as const };
+  const tab: DiagramTab = { id: 'tab', name: '', nodes: [a, obstacle, b], flows: [flow] };
+  expect(validate(tab)).toEqual([]);
+  expect(reviewWarnings(tab)).toEqual([{ level: 'warn', flowId: 'flow', message: '연결선 경로의 노드 위치를 조정하세요' }]);
+  const cleared: DiagramTab = { ...tab, nodes: tab.nodes.map(n => n.id === obstacle.id ? { ...n, x: 340, y: 250 } : n) };
+  expect(reviewWarnings(cleared)).toEqual([]);
+  const incomplete: DiagramTab = { ...cleared, nodes: cleared.nodes.map(n => n.id === a.id ? { ...n, owner: '' } : n) };
+  expect(reviewWarnings(incomplete).map(w => w.message)).toEqual(['검토 필요: 담당자 미지정']);
 });

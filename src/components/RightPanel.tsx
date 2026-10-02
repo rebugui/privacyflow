@@ -1,7 +1,7 @@
 import { useProjectStore } from "../store/useProjectStore";
 import { useUiStore } from "../store/useUiStore";
 import { stageDefs } from "../lib/nodeTypes";
-import { validate } from "../lib/validate";
+import { reviewWarnings } from "../lib/validate";
 import { NodeForm, FlowForm } from "./Forms";
 import { Warnings } from "./Warnings";
 
@@ -19,6 +19,6 @@ export function RightPanel() {
       {(node || flow) && <button className="danger" onClick={() => { if (node) s.removeNode(node.id); if (flow) s.removeFlow(flow.id); ui.select(null); }}>선택 항목 삭제</button>}
     </section>
     <Warnings />
-    <section><h2>처리 단계 현황</h2><dl className="statistics">{Object.entries(stageDefs).map(([id, d]) => <div key={id}><dt>{d.label}</dt><dd>{tab.nodes.filter((n) => n.stage === id).length}개</dd></div>)}<div><dt>전달 흐름</dt><dd>{tab.flows.length}개</dd></div><div><dt>검토 필요</dt><dd>{validate(tab).length}건</dd></div></dl><p className="muted">단계는 시간 순서의 강제가 아닙니다. 제공과 위탁은 별도로 검토하세요.</p></section>
+    <section><h2>처리 단계 현황</h2><dl className="statistics">{Object.entries(stageDefs).map(([id, d]) => <div key={id}><dt>{d.label}</dt><dd>{tab.nodes.filter((n) => n.stage === id).length}개</dd></div>)}<div><dt>전달 흐름</dt><dd>{tab.flows.length}개</dd></div><div><dt>검토 필요</dt><dd>{reviewWarnings(tab).length}건</dd></div></dl><p className="muted">단계는 시간 순서의 강제가 아닙니다. 제공과 위탁은 별도로 검토하세요.</p></section>
   </aside>;
 }

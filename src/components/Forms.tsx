@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { DataFlow, FlowNode, PrivacyNodeKind, PrivacyStage, Protection, TriState } from "../types";
-import { kindDefs, stageDefs, protectionLabels } from "../lib/nodeTypes";
+import { kindDefs, stageDefs, protectionLabels, triStateLabels } from "../lib/nodeTypes";
 import { defaultFlow, splitItems } from "../lib/defaults";
 
 export type NodeValues = Omit<FlowNode, "id" | "x" | "y">;
@@ -57,8 +57,8 @@ export function NodeForm({ initial, onSave, submitLabel = "처리 활동 추가"
     <label>개인정보 항목명 · 줄바꿈 또는 쉼표 구분<textarea rows={3} value={items} onChange={(e) => setItems(e.target.value)} /></label>
     {commonFields.map(([key, label]) => field(key, label, key === "purpose" || key === "legalBasis" || key === "safeguards" || key === "notes"))}
     <div className="form-row">
-      <label>민감정보 포함<select value={sensitive} onChange={(e) => setSensitive(e.target.value as TriState)}><option value="unknown">미지정</option><option value="yes">예</option><option value="no">아니오</option></select></label>
-      <label>고유식별정보 포함<select value={uniqueIdentifier} onChange={(e) => setUniqueIdentifier(e.target.value as TriState)}><option value="unknown">미지정</option><option value="yes">예</option><option value="no">아니오</option></select></label>
+      <label>민감정보 포함<select value={sensitive} onChange={(e) => setSensitive(e.target.value as TriState)}>{Object.entries(triStateLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+      <label>고유식별정보 포함<select value={uniqueIdentifier} onChange={(e) => setUniqueIdentifier(e.target.value as TriState)}>{Object.entries(triStateLabels).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
     </div>
     {stage && stageFields.filter((f) => f.stages.includes(stage)).map((f) => field(f.key, f.label, true))}
     {preserved.length > 0 && <details className="preserved"><summary>이전 단계의 보존 값 ({preserved.length})</summary><p className="muted">현재 단계에 적용하지 않지만 JSON·PPTX에 보존합니다. 단계 변경으로 삭제되지 않습니다.</p>{preserved.map((f) => field(f.key, f.label, true))}</details>}

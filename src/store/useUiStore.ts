@@ -4,12 +4,14 @@ import type { Project } from '../types';
 interface StorageState {
   storageStatus: 'empty' | 'ready' | 'blocked' | 'unavailable';
   rawBackup: string | null;
-  saveError: boolean;
+  saveStatus: 'saved' | 'saving' | 'failed' | 'conflict' | 'unsupported';
 }
 interface UiState extends StorageState {
   selected: string | null;
   focusId: string | null;
   toast: string;
+  mobilePanel: 'canvas' | 'left' | 'right';
+  setMobilePanel: (panel: 'canvas' | 'left' | 'right') => void;
   editEpoch: number;
   select: (id: string | null) => void;
   focus: (id: string) => void;
@@ -19,9 +21,10 @@ interface UiState extends StorageState {
 }
 export const useUiStore = create<UiState>((set) => ({
   selected: null, focusId: null, toast: '', editEpoch: 0,
-  storageStatus: 'empty', rawBackup: null, saveError: false,
+  storageStatus: 'empty', rawBackup: null, saveStatus: 'saved', mobilePanel: 'canvas',
+  setMobilePanel: (mobilePanel) => set({ mobilePanel }),
   select: (selected) => set({ selected }),
-  focus: (focusId) => set({ focusId, selected: focusId }),
+  focus: (focusId) => set({ focusId, selected: focusId, mobilePanel: 'canvas' }),
   notify: (toast) => set({ toast }),
   resetEditors: () => set((state) => ({ editEpoch: state.editEpoch + 1 })),
   setStorageState: (patch) => set(patch),

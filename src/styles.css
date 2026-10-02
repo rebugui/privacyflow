@@ -6,7 +6,7 @@
   --navy: #183b46;
   --blue: #2563eb;
   --line: #dce3ed;
-  --muted: #65758b;
+  --muted: #53627a;
 }
 * { box-sizing: border-box; }
 body { margin: 0; }
@@ -27,7 +27,16 @@ p { line-height: 1.65; }
 .topbar b { font-size: 23px; letter-spacing: -1px; margin-right: 8px; }
 .topbar button { font-size: 12px; padding: 7px 9px; white-space: nowrap; }
 .top-title { max-width: 190px; margin-right: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.workspace { display: flex; flex: 1; min-height: 0; }
+.workspace { display: flex; position: relative; flex: 1; min-width: 0; min-height: 0; }
+.workspace-region { display: contents; }
+.workspace-nav { display: none; }
+.topbar-actions { display: contents; }
+.topbar-primary { display: contents; }
+.topbar-menu-toggle { display: none; }
+@media (min-width: 901px) {
+  .topbar > b, .topbar > .top-title { order: -2; }
+  .topbar-actions > button:nth-child(-n+2) { order: -1; }
+}
 .canvas { flex: 1; min-width: 0; position: relative; background: #fafbfd; }
 .canvas-hint { position: absolute; bottom: 14px; left: 65px; right: 12px; color: var(--muted); font-size: 11px; pointer-events: none; }
 .flow-node { width: 200px; height: 112px; position: relative; }
@@ -118,7 +127,7 @@ th { background: #f1f5fa; position: sticky; top: 0; }
 .tab button { background: none; border: 0; font-size: 12px; padding: 9px 10px; }
 .tab button + button { padding: 6px; }
 .add-tab { border: 0; background: transparent; padding: 5px 9px; font-size: 18px; }
-.tabs-hint { margin-left: auto; white-space: nowrap; color: #738196; font-size: 10px; padding: 0 10px; }
+.tabs-hint { margin-left: auto; white-space: nowrap; color: #53627a; font-size: 10px; padding: 0 10px; }
 .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .meta-grid label:first-child { grid-column: 1/-1; }
 .template-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 22px 0; }
@@ -132,5 +141,37 @@ th { background: #f1f5fa; position: sticky; top: 0; }
 .recovery { max-width: 720px; margin: 12vh auto; padding: 28px; background: white; border: 1px solid var(--line); border-radius: 12px; }
 .recovery p { margin: 16px 0; }
 .recovery button { margin-right: 12px; }
-@media (max-width: 1100px) { .left { width: 250px; } .right { width: 265px; } .top-title { max-width: 150px; } .tabs-hint { display: none; } }
-@media (max-width: 800px) { .workspace { overflow-x: auto; } .canvas { min-width: 360px; } .left, .right { width: 245px; } .topbar { padding: 8px; } .template-choices { grid-template-columns: 1fr; } }
+@media (min-width: 901px) and (max-width: 1100px) { .left { width: 250px; } .right { width: 265px; } .top-title { max-width: 150px; } .tabs-hint { display: none; } }
+@media (max-width: 900px) {
+  .app { min-height: 320px; height: 100dvh; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+  .topbar { position: relative; min-height: 0; padding: calc(8px + env(safe-area-inset-top)) 8px 8px; flex-wrap: nowrap; }
+  .topbar b { font-size: 18px; margin-right: auto; }
+  .top-title { display: none; }
+  .topbar-primary { display: flex; align-items: center; gap: 4px; }
+  .topbar-menu-toggle { display: block; }
+  .topbar-actions { display: flex; position: absolute; top: 100%; left: 8px; right: 8px; max-height: 60dvh; overflow-y: auto; flex-direction: column; align-items: stretch; gap: 5px; padding: 8px; background: var(--navy); border-radius: 0 0 8px 8px; box-shadow: 0 8px 20px #0003; }
+  .topbar-actions[hidden] { display: none; }
+  .topbar-actions button { text-align: left; white-space: normal; }
+  .export-menu { width: 100%; }
+  .dropdown { position: static; width: 100%; box-shadow: none; }
+  .workspace-nav { display: flex; flex-shrink: 0; gap: 4px; padding: 6px 8px; background: #edf1f7; }
+  .workspace-nav[hidden] { display: none; }
+  .workspace-nav button { flex: 1; min-width: 0; padding: 8px 2px; }
+  .workspace-nav button[aria-pressed="true"] { background: #dce9ff; border-color: #2563eb; font-weight: 700; }
+  .workspace-region { position: absolute; inset: 0; display: flex; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+  .workspace-region[inert] .react-flow__node { visibility: hidden !important; }
+  .workspace-region > .canvas, .workspace-region > .panel { flex: 1; width: 100%; height: 100%; min-width: 0; min-height: 0; }
+  .workspace-region > .panel { overflow-y: auto; }
+  .canvas-hint, .tabs-hint, .react-flow__minimap { display: none; }
+  .diagram-tabs { max-width: 100%; padding-left: 8px; padding-right: 8px; }
+  .form-row, .meta-grid, .template-choices { grid-template-columns: minmax(0, 1fr); }
+  .meta-grid label:first-child { grid-column: auto; }
+  .modal { width: calc(100vw - 16px); max-height: calc(100dvh - 16px); padding: 16px; overflow: auto; }
+  .modal-actions, .save-banner { flex-wrap: wrap; }
+  .save-banner { display: flex; align-items: center; gap: 7px; overflow-wrap: anywhere; }
+  .recovery { max-width: calc(100vw - 16px); margin: 8px auto; padding: 16px; overflow-wrap: anywhere; }
+  .recovery button { margin: 5px 8px 5px 0; }
+  .toast { max-width: calc(100vw - 16px); overflow-wrap: anywhere; }
+  .app :is(.topbar, .workspace-nav, .diagram-tabs, .panel, .save-banner, .modal) button, .recovery button, .app .react-flow__controls-button { min-width: 44px; min-height: 44px; }
+  .app :is(.topbar, .panel, .modal) :is(input, select, textarea), .recovery :is(input, select, textarea) { font-size: 16px; }
+}

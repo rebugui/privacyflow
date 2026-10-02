@@ -1,9 +1,9 @@
 import PptxGenJS from "pptxgenjs";
 import type { Project, DiagramTab, FlowNode, DataFlow } from "../../types";
-import { NODE_WIDTH, NODE_HEIGHT, nodeStyle, nodeLines, flowLines, legendItems } from "../nodeTypes";
+import { NODE_WIDTH, NODE_HEIGHT, nodeStyle, nodeLines, flowLines, legendItems, kindDefs, stageDefs, protectionLabels, triStateLabels, portLabels } from "../nodeTypes";
 import type { NodeShape } from "../nodeTypes";
 import { diagramBounds, legendBox } from "../geometry";
-import { flowPath } from "../flowGeometry";
+import { flowPath, routeWarningMessage } from "../flowGeometry";
 import { fileName } from "../download";
 
 const FONT = "Malgun Gothic";
@@ -27,6 +27,17 @@ const flowFields: Record<keyof DataFlow, string> = {
 type Attribute = { reference: string; field: string; value: string };
 type WrappedRow = { reference: string; fields: string[]; lines: string[]; height: number };
 
+const lookup: Record<string, Record<string, string>> = {
+  kind: Object.fromEntries(Object.entries(kindDefs).map(([id, def]) => [id, def.label])),
+  stage: Object.fromEntries(Object.entries(stageDefs).map(([id, def]) => [id, def.label])),
+  sensitive: triStateLabels, uniqueIdentifier: triStateLabels, protection: protectionLabels,
+  sourceHandle: portLabels, targetHandle: portLabels,
+};
+function displayValue(key: string, value: unknown): string {
+  if (value === null) return key === 'sourceHandle' || key === 'targetHandle' ? '자동 (null)' : 'null';
+  if (typeof value === 'string' && lookup[key]?.[value]) return `${lookup[key][value]} (${value})`;
+  return String(value);
+}
 function attributes(reference: string, values: object, labels: Record<string, string>): Attribute[] {
   return Object.entries(values).flatMap(([key, value]) => {
     const field = labels[key] ?? key;
@@ -35,7 +46,7 @@ function attributes(reference: string, values: object, labels: Record<string, st
         ? value.map((item: string, index: number) => ({ reference, field: `${field} [${index + 1}]`, value: item }))
         : [{ reference, field, value: "[]" }];
     }
-    return [{ reference, field, value: value === null ? "null" : String(value) }];
+    return [{ reference, field, value: displayValue(key, value) }];
   });
 }
 
@@ -166,17 +177,17 @@ function diagramSlide(pptx: PptxGenJS, project: Project, tab: DiagramTab) {
       });
     }
   }
+  for (const { flow, route } of routes) {
+    const lines = flowLines(flow);
+    if (route.routeWarning) lines.push(routeWarningMessage(route.routeWarning));
+    text(lines.join("\n"), route.label.x - 90, route.label.y - 28, 180, 56, {
+      align: "center", fontSize: 10 * 72 * scale, fill: { color: "FFFFFF" },
+    });
+  }
   for (const node of tab.nodes) {
     const style = nodeStyle(node);
     shape(style.shape, style.color, node.x, node.y, NODE_WIDTH, NODE_HEIGHT);
     text(nodeLines(node).join("\n"), node.x + 8, node.y + 8, NODE_WIDTH - 16, NODE_HEIGHT - 16, { align: "center" });
-  }
-  for (const { flow, route } of routes) {
-    const lines = flowLines(flow);
-    if (route.routeWarning) lines.push("끝점 노드 위치를 분리하세요");
-    text(lines.join("\n"), route.label.x - 90, route.label.y - 28, 180, 56, {
-      align: "center", fontSize: 11 * 72 * scale, fill: { color: "FFFFFF" },
-    });
   }
   shape("rect", "FFFFFF", 0, 0, 460, 110);
   const m = project.meta;
@@ -217,9 +228,18 @@ export async function exportPptx(project: Project, tabId: string | "all") {
       ...attributes("장", { id: tab.id, name: tab.name }, { id: "장 ID", name: "장 이름" }),
       ...tab.nodes.flatMap((node, i) => nodeAttributes(node, `N${String(i + 1).padStart(3, "0")}`)),
     ]);
-    attributeSlides(pptx, `장 ${index} — 흐름 속성`, tab.flows.flatMap((flow, i) =>
-      attributes(`F${String(i + 1).padStart(3, "0")}`, flow, flowFields),
-    ));
+    attributeSlides(pptx, `장 ${index} — 흐름 속성`, tab.flows.flatMap((flow, i) => {
+      const reference = `F${String(i + 1).padStart(3, "0")}`;
+      const nodeReference = (id: string) => {
+        const at = tab.nodes.findIndex((node) => node.id === id);
+        return at < 0 ? id : `N${String(at + 1).padStart(3, "0")} · ${tab.nodes[at].name}`;
+      };
+      return [
+        ...attributes(reference, flow, flowFields),
+        { reference, field: '출발 노드', value: nodeReference(flow.from) },
+        { reference, field: '도착 노드', value: nodeReference(flow.to) },
+      ];
+    }));
   }
   attributeSlides(pptx, "변경이력", project.revisions.flatMap((revision, i) => attributes(
     `R${String(i + 1).padStart(3, "0")}`, revision,

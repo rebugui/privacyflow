@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { defaultFlow, defaultNode } from '../lib/defaults';
 import { nextNodePosition } from '../lib/layout';
 
+let drain: (() => Promise<void>) | undefined;
 beforeEach(() => {
   vi.resetModules();
   const data = new Map<string, string>();
@@ -10,14 +11,17 @@ beforeEach(() => {
     setItem: (key: string, value: string) => data.set(key, value),
     removeItem: (key: string) => data.delete(key),
   });
+  vi.stubGlobal('navigator', { locks: { request: (_name: string, _options: unknown, callback: () => unknown) => Promise.resolve().then(callback) } });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(async () => { if (drain) await drain(); drain = undefined; vi.unstubAllGlobals(); });
 async function setup(template = true) {
   // The store must hydrate only after this test's storage has been installed.
   const module = await import('./useProjectStore');
+  const { waitForPendingSaves } = await import('../lib/projectStorage');
+  drain = waitForPendingSaves;
   const { useUiStore: ui } = await import('./useUiStore');
   module.useProjectStore.getState().resetProject(template);
-  return { ...module, store: module.useProjectStore, ui };
+  return { ...module, store: module.useProjectStore, ui, waitForPendingSaves };
 }
 it('preserves dragged coordinates when an older attribute form is applied and keeps ID references', async () => {
   const { store, ui } = await setup();
@@ -34,7 +38,7 @@ it('preserves dragged coordinates when an older attribute form is applied and ke
   expect(ui.getState().editEpoch).toBe(epoch);
 });
 it('resets only changed endpoint handles and rejects foreign endpoints atomically', async () => {
-  const { store, projectSnapshot } = await setup();
+  const { store, projectSnapshot, waitForPendingSaves } = await setup();
   let tab = store.getState().tabs[0];
   const flow = tab.flows[0];
   store.getState().updateFlow(flow.id, { sourceHandle: 'top', targetHandle: 'bottom' });
@@ -43,6 +47,7 @@ it('resets only changed endpoint handles and rejects foreign endpoints atomicall
   store.getState().updateFlow(flow.id, { sourceHandle: 'right', to: tab.nodes[3].id });
   expect(store.getState().tabs[0].flows[0]).toMatchObject({ sourceHandle: 'right', targetHandle: null });
   const before = projectSnapshot();
+  await waitForPendingSaves();
   const persisted = localStorage.getItem('privacyflow-project-v1');
   expect(() => store.getState().updateFlow(flow.id, { from: 'absent' })).toThrow();
   expect(() => store.getState().addFlow(defaultFlow('absent', flow.to))).toThrow();
@@ -89,9 +94,10 @@ it('clears vanished selections and invalidates drafts on navigation, reset, and 
   expect(ui.getState()).toMatchObject({ selected: null, editEpoch: ++epoch });
 });
 it('rejects replacement before state, persistence, or editor epoch changes', async () => {
-  const { store, ui, projectSnapshot } = await setup();
+  const { store, ui, projectSnapshot, waitForPendingSaves } = await setup();
   const before = projectSnapshot();
   const epoch = ui.getState().editEpoch;
+  await waitForPendingSaves();
   const persisted = localStorage.getItem('privacyflow-project-v1');
   const invalid = structuredClone(before);
   invalid.tabs[0].flows[0].to = '__legend';

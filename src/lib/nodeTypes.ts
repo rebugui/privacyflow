@@ -1,4 +1,4 @@
-import type { DataFlow, DiagramTab, FlowNode, PrivacyNodeKind, PrivacyStage, Protection } from '../types';
+import type { DataFlow, DiagramTab, FlowNode, Port, PrivacyNodeKind, PrivacyStage, Protection, TriState } from '../types';
 
 export const NODE_WIDTH = 200;
 export const NODE_HEIGHT = 112;
@@ -21,6 +21,8 @@ export const stageDefs: Record<PrivacyStage, { label: string; color: string }> =
 export const protectionLabels: Record<Protection, string> = {
   unknown: '미지정', none: '없음', tls: 'TLS', vpn: 'VPN', other: '기타',
 };
+export const triStateLabels: Record<TriState, string> = { unknown: '미지정', yes: '예', no: '아니오' };
+export const portLabels: Record<Port, string> = { top: '위', right: '오른쪽', bottom: '아래', left: '왼쪽' };
 export function nodeStyle(node: FlowNode) {
   return { ...kindDefs[node.kind], color: stageDefs[node.stage].color };
 }

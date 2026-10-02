@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ReactFlow, Background, BackgroundVariant, Controls, MiniMap, ConnectionMode, useNodesState, useReactFlow } from "@xyflow/react";
+import { ReactFlow, Background, BackgroundVariant, Controls, MiniMap, ConnectionMode, useNodesState, useReactFlow, type NodeChange } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useProjectStore } from "../store/useProjectStore";
 import { useUiStore } from "../store/useUiStore";
@@ -42,11 +42,40 @@ export function Canvas() {
     const timer = setTimeout(() => void flow.fitView({ padding: 0.18 }), 100);
     return () => clearTimeout(timer);
   }, [tab.id, flow]);
-  const positions = new Map(nodes.map((n) => [n.id, n.position]));
-  const renderTab = { ...tab, nodes: tab.nodes.map((n) => ({ ...n, ...(positions.get(n.id) ?? { x: n.x, y: n.y }) })) };
-  const edges = sceneEdges(renderTab, ui.selected).map((edge) => ({ ...edge, selected: edge.selected || selectedEdges.has(edge.id) }));
+  const renderTab = useMemo(() => {
+    const positions = new Map(nodes.map((n) => [n.id, n.position]));
+    let moved = false;
+    const liveNodes = tab.nodes.map((n) => {
+      const position = positions.get(n.id);
+      if (!position || (position.x === n.x && position.y === n.y)) return n;
+      moved = true;
+      return { ...n, x: position.x, y: position.y };
+    });
+    return moved ? { ...tab, nodes: liveNodes } : tab;
+  }, [tab, nodes]);
+  const edges = useMemo(() => sceneEdges(renderTab, ui.selected).map((edge) => ({ ...edge, selected: edge.selected || selectedEdges.has(edge.id) })), [renderTab, ui.selected, selectedEdges]);
+  const handleNodesChange = (changes: NodeChange[]) => {
+    onNodesChange(changes);
+    const positions = new Map<string, { x: number; y: number }>();
+    for (const change of changes) {
+      if (change.type === 'position' && change.dragging === false && change.position !== undefined) positions.set(change.id, change.position);
+    }
+    if (!positions.size) return;
+    const latest = useProjectStore.getState();
+    if (latest.activeTabId !== tab.id) return;
+    const current = latest.tabs.find((item) => item.id === tab.id);
+    if (!current) return;
+    let moved = false;
+    const updated = current.nodes.map((node) => {
+      const position = positions.get(node.id);
+      if (!position || (node.x === position.x && node.y === position.y)) return node;
+      moved = true;
+      return { ...node, x: position.x, y: position.y };
+    });
+    if (moved) latest.updateTab({ ...current, nodes: updated });
+  };
   return <main className="canvas" aria-label="개인정보 처리 흐름도 캔버스"><ReactFlow
-    nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={onNodesChange}
+    nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes} onNodesChange={handleNodesChange}
     onEdgesChange={(changes) => setSelectedEdges((current) => { const next = new Set(current); for (const change of changes) { if (change.type === "select") { if (change.selected) next.add(change.id); else next.delete(change.id); } else if (change.type === "remove") next.delete(change.id); } return next; })}
     connectionMode={ConnectionMode.Loose} minZoom={0.08} maxZoom={2} fitView deleteKeyCode={["Backspace", "Delete"]} multiSelectionKeyCode={["Meta", "Control", "Shift"]}
     onConnect={(connection) => {
@@ -55,12 +84,6 @@ export function Canvas() {
       if (!allowed.includes(connection.sourceHandle) || !allowed.includes(connection.targetHandle)) return;
       const id = state.addFlow({ ...defaultFlow(connection.source, connection.target), sourceHandle: (connection.sourceHandle ?? null) as Port | null, targetHandle: (connection.targetHandle ?? null) as Port | null });
       ui.select(id);
-    }}
-    onNodeDragStop={(_, __, moved) => {
-      const latest = useProjectStore.getState();
-      const current = latest.tabs.find((t) => t.id === latest.activeTabId)!;
-      const movedPositions = new Map(moved.map((n) => [n.id, n.position]));
-      latest.updateTab({ ...current, nodes: current.nodes.map((n) => { const position = movedPositions.get(n.id); return position ? { ...n, ...position } : n; }) });
     }}
     onNodeClick={(_, n) => { if (n.selectable !== false) ui.select(n.id); }}
     onEdgeClick={(_, edge) => ui.select(edge.id)} onPaneClick={() => { ui.select(null); setSelectedEdges(new Set()); }}

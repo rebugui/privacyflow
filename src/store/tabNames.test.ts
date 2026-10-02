@@ -1,5 +1,6 @@
 import { beforeEach, afterEach, expect, it, vi } from 'vitest';
 
+let drain: (() => Promise<void>) | undefined;
 beforeEach(() => {
   vi.resetModules();
   const data = new Map<string, string>();
@@ -8,11 +9,14 @@ beforeEach(() => {
     setItem: (key: string, value: string) => data.set(key, value),
     removeItem: (key: string) => data.delete(key),
   });
+  vi.stubGlobal('navigator', { locks: { request: (_name: string, _options: unknown, callback: () => unknown) => Promise.resolve().then(callback) } });
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(async () => { if (drain) await drain(); drain = undefined; vi.unstubAllGlobals(); });
 async function setup() {
   // Import after the per-test storage boundary, since persist hydrates at module load.
   const { useProjectStore: store } = await import('./useProjectStore');
+  const { waitForPendingSaves } = await import('../lib/projectStorage');
+  drain = waitForPendingSaves;
   store.getState().resetProject(true);
   return store;
 }

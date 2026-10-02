@@ -5,9 +5,13 @@ export interface Point { x: number; y: number }
 export interface FlowRoute {
   points: Point[];
   label: Point;
-  routeWarning?: 'overlapping-endpoints';
+  routeWarning?: 'overlapping-endpoints' | 'obstructed-route';
 }
 interface Rect { x: number; y: number; right: number; bottom: number }
+const routeCache = new WeakMap<DiagramTab, WeakMap<DataFlow, FlowRoute>>();
+export function routeWarningMessage(warning: NonNullable<FlowRoute['routeWarning']>): string {
+  return warning === 'overlapping-endpoints' ? '끝점 노드 위치를 분리하세요' : '연결선 경로의 노드 위치를 조정하세요';
+}
 const directions: Record<Port, Point> = {
   top: { x: 0, y: -1 }, right: { x: 1, y: 0 },
   bottom: { x: 0, y: 1 }, left: { x: -1, y: 0 },
@@ -80,18 +84,50 @@ function shortest(graph: Graph, from: Point, to: Point, initialDirection: number
   const costs = new Float64Array(count).fill(Infinity), previous = new Int32Array(count).fill(-1), visited = new Uint8Array(count);
   const startState = start * 4 + initialDirection;
   costs[startState] = 0;
+  type Entry = { state: number; cost: number };
+  const heap: Entry[] = [{ state: startState, cost: 0 }];
+  const less = (a: Entry, b: Entry) => a.cost < b.cost || (a.cost === b.cost && a.state < b.state);
+  const push = (entry: Entry) => {
+    let at = heap.length;
+    heap.push(entry);
+    while (at) {
+      const parent = (at - 1) >> 1;
+      if (!less(entry, heap[parent])) break;
+      heap[at] = heap[parent];
+      at = parent;
+    }
+    heap[at] = entry;
+  };
+  const pop = (): Entry => {
+    const first = heap[0], last = heap.pop()!;
+    if (heap.length) {
+      let at = 0;
+      while (at * 2 + 1 < heap.length) {
+        let child = at * 2 + 1;
+        if (child + 1 < heap.length && less(heap[child + 1], heap[child])) child++;
+        if (!less(heap[child], last)) break;
+        heap[at] = heap[child];
+        at = child;
+      }
+      heap[at] = last;
+    }
+    return first;
+  };
   let final = -1;
-  for (;;) {
-    let state = -1, cost = Infinity;
-    for (let i=0;i<count;i++) if (!visited[i] && costs[i] < cost) { state=i; cost=costs[i]; }
-    if (state < 0) break;
+  while (heap.length) {
+    const { state, cost } = pop();
+    if (visited[state] || costs[state] !== cost) continue;
     const at = Math.floor(state / 4), heading = state % 4;
     if (at === end) { final = state; break; }
     visited[state] = 1;
     for (const next of graph.neighbors[at]) {
       const a=graph.points[at], b=graph.points[next], dir=direction(a,b), target=next*4+dir;
       const nextCost=cost+Math.abs(a.x-b.x)+Math.abs(a.y-b.y)+(dir === heading ? 0 : 20);
-      if (nextCost < costs[target]) { costs[target]=nextCost; previous[target]=state; }
+      if (nextCost < costs[target]) {
+        costs[target]=nextCost;
+        previous[target]=state;
+        push({ state: target, cost: nextCost });
+      }
     }
   }
   if (final < 0) return null;
@@ -113,36 +149,59 @@ function simplify(points: Point[]): Point[] {
   return out;
 }
 export function flowPath(tab: DiagramTab, flow: DataFlow): FlowRoute {
+  let routes = routeCache.get(tab);
+  if (!routes) { routes = new WeakMap(); routeCache.set(tab, routes); }
+  const cached = routes.get(flow);
+  if (cached) return cached;
+  const route = calculateFlowPath(tab, flow);
+  routes.set(flow, route);
+  return route;
+}
+function calculateFlowPath(tab: DiagramTab, flow: DataFlow): FlowRoute {
   const source=tab.nodes.find(n => n.id===flow.from), target=tab.nodes.find(n => n.id===flow.to);
   if (!source || !target) throw new Error('흐름의 끝점이 올바르지 않습니다');
   const sourcePort=flow.sourceHandle ?? 'right', targetPort=flow.targetHandle ?? 'left';
   const first=portPoint(source,sourcePort), last=portPoint(target,targetPort);
   const a=rect(source),b=rect(target), self=source.id===target.id;
-  const fallback=():FlowRoute => ({ points:[first,last],label:{x:(first.x+last.x)/2,y:(first.y+last.y)/2},routeWarning:'overlapping-endpoints' });
-  if (!self && a.x<b.right && a.right>b.x && a.y<b.bottom && a.bottom>b.y) return fallback();
+  const fallback=(routeWarning: NonNullable<FlowRoute['routeWarning']>):FlowRoute => ({ points:[first,last],label:{x:(first.x+last.x)/2,y:(first.y+last.y)/2},routeWarning });
+  if (!self && a.x<b.right && a.right>b.x && a.y<b.bottom && a.bottom>b.y) return fallback('overlapping-endpoints');
   const start=stub(first,sourcePort,self?undefined:b), end=stub(last,targetPort,self?undefined:a);
   const peers=tab.flows.filter(f => (f.from===flow.from && f.to===flow.to) || (!self && f.from===flow.to && f.to===flow.from));
   const lane=self || peers.length>1;
   const index=Math.max(0,peers.findIndex(f => f.id===flow.id));
   const laneY=Math.min(a.y,b.y)-72*(index+1), left=Math.min(a.x,b.x)-32, right=Math.max(a.right,b.right)+32;
   const required=lane ? [start,{x:left,y:laneY},{x:right,y:laneY},end] : [start,end];
-  const graph=visibilityGraph(required,self?[a]:[a,b]);
-  const result:Point[]=[first];
-  let heading=portOrder.indexOf(sourcePort);
-  for (let i=1;i<required.length;i++) {
-    const part=shortest(graph,required[i-1],required[i],heading);
-    if (!part) return fallback();
-    result.push(...part.points); heading=part.direction;
-  }
-  result.push(last);
-  const points=simplify(result);
-  let label:Point={x:(left+right)/2,y:laneY};
-  if (!lane) {
-    let longest=-1;
-    for (let i=1;i<points.length;i++) {
-      const a=points[i-1],b=points[i],length=Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
-      if (length>longest) {longest=length;label={x:(a.x+b.x)/2,y:(a.y+b.y)/2};}
+  const obstacles=self?[a]:[a,b];
+  const nonEndpoints=tab.nodes.filter(n => n.id!==source.id && n.id!==target.id);
+  for (let attempt=0;attempt<=8;attempt++) {
+    const graph=visibilityGraph(required,obstacles);
+    const result:Point[]=[first];
+    let heading=portOrder.indexOf(sourcePort);
+    for (let i=1;i<required.length;i++) {
+      const part=shortest(graph,required[i-1],required[i],heading);
+      if (!part) return fallback('obstructed-route');
+      result.push(...part.points); heading=part.direction;
     }
+    result.push(last);
+    const points=simplify(result);
+    const blocker=nonEndpoints.find(n => {
+      const box=rect(n);
+      return points.some((point,i) => i>0 && !clearSegment(points[i-1],point,[box]));
+    });
+    if (blocker) {
+      if (attempt===8 || obstacles.some(box => box.x===blocker.x && box.y===blocker.y && box.right===blocker.x+NODE_WIDTH && box.bottom===blocker.y+NODE_HEIGHT)) return fallback('obstructed-route');
+      obstacles.push(rect(blocker));
+      continue;
+    }
+    let label:Point={x:(left+right)/2,y:laneY};
+    if (!lane) {
+      let longest=-1;
+      for (let i=1;i<points.length;i++) {
+        const p=points[i-1],q=points[i],length=Math.abs(p.x-q.x)+Math.abs(p.y-q.y);
+        if (length>longest) {longest=length;label={x:(p.x+q.x)/2,y:(p.y+q.y)/2};}
+      }
+    }
+    return {points,label};
   }
-  return {points,label};
+  return fallback('obstructed-route');
 }

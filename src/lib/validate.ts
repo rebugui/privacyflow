@@ -1,5 +1,6 @@
 import type { DiagramTab, Warning } from '../types';
 
+import { flowPath, routeWarningMessage } from './flowGeometry';
 export function validate(tab: DiagramTab): Warning[] {
   const warnings: Warning[] = [];
   for (const node of tab.nodes) {
@@ -32,4 +33,11 @@ export function validate(tab: DiagramTab): Warning[] {
     if (flow.protection === 'other' && !flow.protectionNote.trim()) warnings.push({ level: 'warn', flowId: flow.id, message: '검토 필요: 기타 보호조치 설명 미지정' });
   }
   return warnings;
+}
+
+export function reviewWarnings(tab: DiagramTab): Warning[] {
+  return [...validate(tab), ...tab.flows.flatMap((flow) => {
+    const warning = flowPath(tab, flow).routeWarning;
+    return warning ? [{ level: 'warn' as const, flowId: flow.id, message: routeWarningMessage(warning) }] : [];
+  })];
 }
