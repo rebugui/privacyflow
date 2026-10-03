@@ -175,3 +175,9 @@ th { background: #f1f5fa; position: sticky; top: 0; }
   .app :is(.topbar, .workspace-nav, .diagram-tabs, .panel, .save-banner, .modal) button, .recovery button, .app .react-flow__controls-button { min-width: 44px; min-height: 44px; }
   .app :is(.topbar, .panel, .modal) :is(input, select, textarea), .recovery :is(input, select, textarea) { font-size: 16px; }
 }
+
+/* 만든 사람 크레딧 — GitHub 링크 */
+.author-credit{display:inline-flex;align-items:center;gap:4px;margin-left:8px;font-size:12px;font-weight:500;color:var(--muted);text-decoration:none;flex-shrink:0}
+.author-credit:hover{color:#3f4f6b}
+.author-credit:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+@media (max-width:900px){.author-credit{margin-left:6px}.author-credit .credit-name{display:none}}
